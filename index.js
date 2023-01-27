@@ -1,7 +1,8 @@
 const prefix = "+"
 const Discord = require('discord.js')
 const client = new Discord.Client({ partials: ["MESSAGE", "CHANNEL", "REACTION"]});
-const { token } = require('./config.js')
+//const { token } = require('./config.js')
+const token = process.env.token;
 const version = '0.3.4.1'
 
 
