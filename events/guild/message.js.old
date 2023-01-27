@@ -1,0 +1,98 @@
+const { Collection, MessageEmbed } = require("discord.js")
+const { version } = require("../../index")
+const cooldowns = new Map()
+
+module.exports = (Discord, client, message) => {
+    
+    const prefix = '+'
+    if(!message.content.startsWith(prefix) || message.author.bot) return
+
+    const args = message.content.slice(prefix.length).split(/ +/)
+    const cmdName = args.shift().toLowerCase()
+    const cmd = client.commands.get(cmdName) || client.commands.find(a => a.aliases && a.aliases.includes(cmdName))
+
+
+    if (!cmd.cooldown) return
+    
+    if (!cooldowns.has(cmd.name)){
+        cooldowns.set(cmdName, new Collection())
+    }
+    if (!cmd) return
+
+    const now = Date.now()
+    const timestamps = cooldowns.get(cmd.name)
+    const cooldownAmount = cmd.cooldown * 1000
+    
+    if (!cmd.cooldown) {
+        
+        if (timestamps.has(message.author.id)) {
+            const expirationTime = timestamps.get(message.author.id) + cooldownAmount
+        if (now < expirationTime) {
+            const timeLeft = (expirationTime - now) / 1000
+            const embed = new MessageEmbed()
+            .setColor("#ff0000")
+            .setTitle("🕔 Cooldown")
+            .setDescription(`Please wait ${timeLeft.toFixed(1,)} seconds before running command \`${cmdName}\``)
+            .setFooter(`NuclearBot v.${version}`)
+            return message.reply(embed)
+        }
+     }
+
+     timestamps.set(message.author.id, now)
+     setTimeout(() => {
+        timestamps.delete(message.author.id)
+     }, cooldown)
+        console.log("In loop")
+        try{
+            if (!cmdName) return
+            //if (cmd.async === true) 
+            cmd.execute(client, message, args, Discord)
+            //else if (cmd.async === false) client.commands.get(cmdName).run(message, args, client)
+            //client.commands.get(cmdName).execute(client, message, cmdName, args, Discord)
+            console.log(`Executed ${cmd.name}!`)
+        } catch (err){
+            message.reply("💔 | Error detected!")
+            message.author.send("Please send this report to main developer of firebot!")
+            message.author.send(`\`\`\`Command: ${cmdName}\nArgs: ${args}\nMessage: ${message}\nAuthor: ${message.author.tag}\nErr code: ${err}\`\`\``)
+            console.log(err)
+        }
+        return
+    }
+    console.log('After loop')
+    const cooldown_amount = (cmd.cooldown) * 1000
+    
+    
+
+    if (timestamps.has(message.author.id)){
+        const expiration_time = timestamps.get(message.author.id) + cooldown_amount
+
+        if (now < expiration_time){
+            const time_left = (expiration_time - current_time) / 1000
+
+            const embed = new MessageEmbed() 
+            .setColor("#ff0000") 
+            .setTitle("🕔 Cooldown") 
+            .setDescription(`Please wait ${time_left.toFixed(1,)} seconds before running command ${cmd.name}`) 
+            .setFooter(`NuclearBot v.${version}`) 
+            return message.reply(embed)
+        }
+    }
+
+    timestamps.set(message.author.id, now)
+    setTimeout(() => timestamps.delete(message.author.id), cooldown_amount)
+
+
+    try{
+        if (!cmd) return
+        //if (cmd.async === true) 
+        client.commands.get(cmdName).execute(client, message, cmdName, args, Discord)
+            //else client.commands.get(cmdName).run(msg, args, client)
+        
+        console.log(`Executed ${cmdName}!`)
+    } catch (err){
+        message.reply("💔 | Error detected!")
+        message.author.send("Please send this report to main developer of firebot!")
+        message.author.send(`\`\`\`Command: ${cmdName}\nArgs: ${args}\nMessage: ${message}\nAuthor: ${message.author.tag}\nErr code: ${err}\`\`\``)
+        console.log(err)
+    }
+}
